@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -20,17 +21,25 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-
-	// Read the first line containing branch name
-	r := bufio.NewReader(b)
-	var line string
-	line, err = r.ReadString('\n')
+	prompt, err := makePrompt(b)
 	if err != nil {
 		os.Exit(1)
+	}
+
+	fmt.Println(prompt)
+}
+
+func makePrompt(status io.Reader) (string, error) {
+	// Read the first line containing branch name
+	r := bufio.NewReader(status)
+	line, err := r.ReadString('\n')
+	if err != nil {
+		return "", err
 	}
 
 	// Find out the branch name from the string
 	branchRegexp := regexp.MustCompile("# On branch (.+)")
 	branch := branchRegexp.FindStringSubmatch(line)[1]
-	fmt.Println(branch)
+
+	return branch, nil
 }
