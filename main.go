@@ -3,18 +3,24 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"regexp"
+	"text/template"
 )
+
+var tpl = flag.String("t", "{{.Branch}}", "Template for prompt string")
 
 type gitStatus struct {
 	Branch string
 }
 
 func main() {
+	flag.Parse()
+
 	r, err := runGitStatus()
 	if err != nil {
 		os.Exit(1)
@@ -25,7 +31,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println(makePrompt(status))
+	prompt, err := makePrompt(status, *tpl)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	fmt.Println(prompt)
 }
 
 func runGitStatus() (io.Reader, error) {
@@ -53,6 +64,13 @@ func parseStatus(src io.Reader) (*gitStatus, error) {
 	return &status, nil
 }
 
-func makePrompt(status *gitStatus) string {
-	return status.Branch
+func makePrompt(status *gitStatus, tpl string) (string, error) {
+	t, err := template.New("").Parse(tpl)
+	if err != nil {
+		return "", nil
+	}
+
+	b := &bytes.Buffer{}
+	err = t.Execute(b, status)
+	return b.String(), nil
 }
