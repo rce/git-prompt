@@ -10,36 +10,49 @@ import (
 	"regexp"
 )
 
-func main() {
-	// Buffer for git status output
-	b := &bytes.Buffer{}
+type gitStatus struct {
+	Branch string
+}
 
-	// Run command
+func main() {
+	r, err := runGitStatus()
+	if err != nil {
+		os.Exit(1)
+	}
+
+	status, err := parseStatus(r)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	fmt.Println(makePrompt(status))
+}
+
+func runGitStatus() (io.Reader, error) {
+	b := &bytes.Buffer{}
 	cmd := exec.Command("git", "status")
 	cmd.Stdout = b
 	err := cmd.Run()
-	if err != nil {
-		os.Exit(1)
-	}
-	prompt, err := makePrompt(b)
-	if err != nil {
-		os.Exit(1)
-	}
-
-	fmt.Println(prompt)
+	return b, err
 }
 
-func makePrompt(status io.Reader) (string, error) {
+func parseStatus(src io.Reader) (*gitStatus, error) {
+	r := bufio.NewReader(src)
+	var status gitStatus
+
 	// Read the first line containing branch name
-	r := bufio.NewReader(status)
 	line, err := r.ReadString('\n')
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Find out the branch name from the string
 	branchRegexp := regexp.MustCompile("# On branch (.+)")
-	branch := branchRegexp.FindStringSubmatch(line)[1]
+	status.Branch = branchRegexp.FindStringSubmatch(line)[1]
 
-	return branch, nil
+	return &status, nil
+}
+
+func makePrompt(status *gitStatus) string {
+	return status.Branch
 }

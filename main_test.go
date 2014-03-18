@@ -5,19 +5,19 @@ import (
 	"testing"
 )
 
-func TestSingleUntrackedFileOnBranchMaster(t *testing.T) {
-	const singleUntrackedFile = `# On branch master
+func TestParseStatus(t *testing.T) {
+	b := bytes.NewBufferString(`# On branch master
 # Untracked files:
 #   (use "git add <file>..." to include in what will be committed)
 #
 #	untracked_file
 nothing added to commit but untracked files present (use "git add" to track)
-`
-	s, err := makePrompt(bytes.NewBufferString(singleUntrackedFile))
+`)
+	status, err := parseStatus(b)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if s != "master" {
-		t.Errorf("Expected prompt string 'master', got '%v'", s)
+	if status.Branch != "master" {
+		t.Errorf("Expected branch 'master', got '%v'", status.Branch)
 	}
 }
