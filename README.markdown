@@ -15,7 +15,7 @@ currently in using the default template. You can provide your own template
 using the `-t` flag. For example `git-prompt -t "Current branch: {{.Branch}}"`
 prints the "Current branch: master" wehn you are on branch master. See
 [text/template package's documentation](http://golang.org/pkg/text/template/)
-and the `gitStatus` struct in file main.go for more information about the
+and the `gitInfo` struct in file main.go for more information about the
 template syntax.
 
 If you are in a directory that is not part of a git repository or some other

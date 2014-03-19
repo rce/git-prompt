@@ -16,7 +16,7 @@ var tpl = flag.String("t", "{{.Branch}}", "Template for prompt string")
 var ErrNotOnBranch = errors.New("you are not currently on a commit tagged as a branch")
 
 type gitInfo struct {
-	Branch string
+	Branch string // Name of the current branch or a commit hash if you are not on a specific branch
 }
 
 func main() {
