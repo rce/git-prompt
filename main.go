@@ -21,12 +21,12 @@ type gitStatus struct {
 func main() {
 	flag.Parse()
 
-	r, err := runGitStatus()
+	b, err := runCommand("git", "status")
 	if err != nil {
 		os.Exit(1)
 	}
 
-	status, err := parseStatus(r)
+	status, err := parseStatus(b)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -39,9 +39,9 @@ func main() {
 	fmt.Println(prompt)
 }
 
-func runGitStatus() (io.Reader, error) {
+func runCommand(command string, args ...string) (*bytes.Buffer, error) {
 	b := &bytes.Buffer{}
-	cmd := exec.Command("git", "status")
+	cmd := exec.Command(command, args...)
 	cmd.Stdout = b
 	err := cmd.Run()
 	return b, err
@@ -59,7 +59,19 @@ func parseStatus(src io.Reader) (*gitStatus, error) {
 
 	// Find out the branch name from the string
 	branchRegexp := regexp.MustCompile("# On branch (.+)")
-	status.Branch = branchRegexp.FindStringSubmatch(line)[1]
+	results := branchRegexp.FindStringSubmatch(line)
+	if len(results) == 2 {
+		// Found branch name
+		status.Branch = results[1]
+	} else {
+		// Figure out commit name
+		b, err := runCommand("git", "rev-parse", "--short", "HEAD")
+		if err != nil {
+			return nil, err
+		}
+
+		status.Branch = b.String()
+	}
 
 	return &status, nil
 }
