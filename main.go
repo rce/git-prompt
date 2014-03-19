@@ -2,18 +2,15 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
+	"strings"
 	"text/template"
 )
 
 var tpl = flag.String("t", "{{.Branch}}", "Template for prompt string")
-
-var ErrNotOnBranch = errors.New("you are not currently on a commit tagged as a branch")
 
 type gitInfo struct {
 	Branch string // Name of the current branch or a commit hash if you are not on a specific branch
@@ -44,21 +41,12 @@ func runCommand(command string, args ...string) (*bytes.Buffer, error) {
 }
 
 func currentBranch() (string, error) {
-	b, err := runCommand("git", "status")
+	b, err := runCommand("git", "symbolic-ref", "HEAD")
 	if err != nil {
 		return "", err
 	}
 
-	return readBranchFromStatus(b.String())
-}
-
-func readBranchFromStatus(status string) (string, error) {
-	branchRegexp := regexp.MustCompile("# On branch (.+)")
-	results := branchRegexp.FindStringSubmatch(status)
-	if len(results) != 2 {
-		return "", ErrNotOnBranch
-	}
-	return results[1], nil
+	return strings.TrimPrefix(b.String(), "refs/heads/"), nil
 }
 
 func currentHash() (string, error) {
@@ -75,11 +63,11 @@ func getInfo() (*gitInfo, error) {
 
 	// Find branch or current commit hash
 	branch, err := currentBranch()
-	if err == ErrNotOnBranch {
-		branch, err = currentHash()
-	}
 	if err != nil {
-		return nil, err
+		branch, err = currentHash()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	info.Branch = branch
