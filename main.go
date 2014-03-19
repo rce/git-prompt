@@ -46,7 +46,7 @@ func runCommand(command string, args ...string) (*bytes.Buffer, error) {
 func currentBranch() (string, error) {
 	b, err := runCommand("git", "status")
 	if err != nil {
-		os.Exit(1)
+		return "", err
 	}
 
 	return readBranchFromStatus(b.String())
