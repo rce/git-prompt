@@ -13,7 +13,7 @@ import (
 var tpl = flag.String("t", "{{.Branch}}", "Template for prompt string")
 
 type gitInfo struct {
-	Branch string // Name of the current branch or a commit hash if you are not on a specific branch
+	Branch string // Name of the current branch, tag or commit hash
 }
 
 func main() {
@@ -49,6 +49,15 @@ func currentBranch() (string, error) {
 	return strings.TrimPrefix(b.String(), "refs/heads/"), nil
 }
 
+func currentTag() (string, error) {
+	b, err := runCommand("git", "describe", "--tags", "--exact-match")
+	if err != nil {
+		return "", err
+	}
+
+	return b.String(), nil
+}
+
 func currentHash() (string, error) {
 	b, err := runCommand("git", "rev-parse", "--short", "HEAD")
 	if err != nil {
@@ -61,12 +70,15 @@ func currentHash() (string, error) {
 func getInfo() (*gitInfo, error) {
 	var info gitInfo
 
-	// Find branch or current commit hash
+	// Find current branch, tag or commit hash
 	branch, err := currentBranch()
 	if err != nil {
-		branch, err = currentHash()
+		branch, err = currentTag()
 		if err != nil {
-			return nil, err
+			branch, err = currentHash()
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
